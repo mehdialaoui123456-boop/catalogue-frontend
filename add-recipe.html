@@ -255,13 +255,11 @@
 
       <!-- Cover photo -->
       <div class="field">
-        <label>صورة الغلاف (اختياري)</label>
-        <div class="photo-drop" id="photoDrop" onclick="document.getElementById('photoInput').click()">
-          <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handlePhoto(this)"/>
-          <div class="drop-icon" id="dropIcon">🖼️</div>
-          <div class="drop-text" id="dropText"><strong>اضغط لاختيار صورة</strong><br/>JPG, PNG, WEBP · تُضغط تلقائياً</div>
-        </div>
+        <label for="photoUrl">صورة الغلاف (اختياري)</label>
+        <input type="text" id="photoUrl" placeholder="الصق رابط الصورة من ibb.co أو أي رابط مباشر" oninput="previewPhotoUrl(this.value)"/>
+        <p style="font-size:11px;color:#aaa;margin-top:4px;">💡 ارفع صورتك على <a href="https://imgbb.com" target="_blank" style="color:var(--orange)">imgbb.com</a> واحصل على الرابط المباشر</p>
         <img id="photoPreview" class="photo-preview" alt="معاينة الصورة" style="display:none;margin-top:8px;border-radius:8px;width:100%;max-height:160px;object-fit:contain;"/>
+        <p id="photoErr" style="display:none;font-size:12px;color:#c0392b;margin-top:4px;">تعذّر تحميل الصورة — تأكد أن الرابط مباشر</p>
         <button class="photo-clear" id="photoClear" style="display:none;margin-top:6px;" onclick="clearPhoto()">× حذف الصورة</button>
       </div>
 
@@ -275,46 +273,42 @@
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
 <script>
-  // ── Photo upload → base64 ────────────────────────────────
+  // ── Photo URL ────────────────────────────────────────────
   let coverPhotoUrl = null;
 
-  function handlePhoto(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const MAX = 600;
-        let w = img.width, h = img.height;
-        if (w > MAX || h > MAX) {
-          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-          else       { w = Math.round(w * MAX / h); h = MAX; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        coverPhotoUrl = canvas.toDataURL('image/jpeg', 0.7);
-        const preview = document.getElementById('photoPreview');
-        preview.src = coverPhotoUrl;
-        preview.style.display = 'block';
-        document.getElementById('photoClear').style.display = 'inline-block';
-        document.getElementById('dropIcon').style.display = 'none';
-        document.getElementById('dropText').style.display = 'none';
-      };
-      img.src = e.target.result;
+  function previewPhotoUrl(url) {
+    const preview = document.getElementById('photoPreview');
+    const err     = document.getElementById('photoErr');
+    const clear   = document.getElementById('photoClear');
+    if (!url.trim()) {
+      preview.style.display = 'none';
+      err.style.display     = 'none';
+      clear.style.display   = 'none';
+      coverPhotoUrl = null;
+      return;
+    }
+    preview.onload  = () => {
+      preview.style.display = 'block';
+      err.style.display     = 'none';
+      clear.style.display   = 'inline-block';
+      coverPhotoUrl = url.trim();
     };
-    reader.readAsDataURL(file);
+    preview.onerror = () => {
+      preview.style.display = 'none';
+      err.style.display     = 'block';
+      clear.style.display   = 'none';
+      coverPhotoUrl = null;
+    };
+    preview.src = url.trim();
   }
 
   function clearPhoto() {
     coverPhotoUrl = null;
-    document.getElementById('photoInput').value           = '';
+    document.getElementById('photoUrl').value             = '';
     document.getElementById('photoPreview').src           = '';
     document.getElementById('photoPreview').style.display = 'none';
     document.getElementById('photoClear').style.display   = 'none';
-    document.getElementById('dropIcon').style.display     = '';
-    document.getElementById('dropText').style.display     = '';
+    document.getElementById('photoErr').style.display     = 'none';
   }
 
   // Guard: redirect to login if not authenticated
