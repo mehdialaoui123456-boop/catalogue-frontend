@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>إنشاء حساب – خميرة رفيعة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --orange:      #E8440A;
+    --orange-dark: #B33300;
+    --orange-light:#F0855A;
+    --blue-dark:   #1B3A8C;
+    --cream:       #FFF8F4;
+    --text:        #2A1A10;
+  }
+  html, body {
+    width: 100%; min-height: 100%;
+    background: #1a0a00;
+    font-family: 'Cairo', sans-serif;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .scene {
+    width: 100vw; min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 18px;
+    background: radial-gradient(ellipse at center, #3a1500 0%, #1a0800 60%, #0d0400 100%);
+    padding: 24px 16px;
+  }
+  .book-title {
+    color: rgba(255,255,255,0.6);
+    font-size: clamp(13px,1.6vw,17px);
+    letter-spacing: 3px; font-weight: 400;
+  }
+  .card {
+    background: var(--cream);
+    border-radius: 12px;
+    width: min(90vw, 400px);
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(232,68,10,0.3);
+  }
+  .card-header {
+    background: var(--orange);
+    padding: 22px 28px;
+    position: relative; overflow: hidden;
+  }
+  .card-header::after {
+    content: ''; position: absolute;
+    right: -20px; top: 50%; transform: translateY(-50%);
+    width: 90px; height: 90px;
+    background: rgba(255,255,255,0.08); border-radius: 50%;
+  }
+  .card-header h1 {
+    color: white; font-weight: 900;
+    font-size: clamp(20px,3.5vw,28px);
+    text-shadow: 1px 2px 6px rgba(0,0,0,0.25);
+    text-align: center; position: relative; z-index: 1;
+  }
+  .card-header p {
+    color: rgba(255,255,255,0.8);
+    font-size: clamp(12px,1.6vw,14px);
+    text-align: center; margin-top: 4px;
+    position: relative; z-index: 1;
+  }
+  .card-body { padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-size: 14px; font-weight: 700;
+    color: var(--text);
+  }
+  .field input {
+    border: 1.5px solid rgba(232,68,10,0.25);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px; color: var(--text);
+    background: white;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    text-align: right;
+  }
+  .field input:focus {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(232,68,10,0.12);
+  }
+  .btn-submit {
+    background: var(--orange); color: white; border: none;
+    padding: 12px 28px; border-radius: 30px;
+    font-family: 'Cairo', sans-serif;
+    font-size: clamp(14px,1.6vw,16px); font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 18px rgba(232,68,10,0.4);
+    width: 100%; margin-top: 4px;
+  }
+  .btn-submit:hover  { background: var(--orange-dark); transform: scale(1.02); }
+  .btn-submit:active { transform: scale(0.98); }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .error-msg {
+    color: #c0392b; font-size: 13px; text-align: center;
+    background: #fde8e8; border-radius: 6px; padding: 8px 12px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+  .login-link {
+    text-align: center;
+    font-size: 13px; color: #777;
+  }
+  .login-link a {
+    color: var(--orange); font-weight: 700; text-decoration: none;
+  }
+  .login-link a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="scene">
+  <p class="book-title">Catalogue de Recettes · خميرة رفيعة</p>
+  <div class="card">
+    <div class="card-header">
+      <h1>إنشاء حساب</h1>
+      <p>انضم إلينا وابدأ في إضافة وصفاتك</p>
+    </div>
+    <div class="card-body">
+      <div id="errorMsg" class="error-msg"></div>
+      <div class="field">
+        <label for="name">الاسم الكامل</label>
+        <input type="text" id="name" placeholder="أدخل اسمك" required autocomplete="name"/>
+      </div>
+      <div class="field">
+        <label for="email">البريد الإلكتروني</label>
+        <input type="email" id="email" placeholder="example@email.com" required autocomplete="email"/>
+      </div>
+      <div class="field">
+        <label for="password">كلمة المرور</label>
+        <input type="password" id="password" placeholder="6 أحرف على الأقل" required autocomplete="new-password" minlength="6"/>
+      </div>
+      <div class="field">
+        <label for="confirm">تأكيد كلمة المرور</label>
+        <input type="password" id="confirm" placeholder="أعد كتابة كلمة المرور" required autocomplete="new-password"/>
+      </div>
+      <button class="btn-submit" id="submitBtn" onclick="handleRegister()">إنشاء الحساب</button>
+      <p class="login-link">لديك حساب بالفعل؟ <a href="login.html">تسجيل الدخول</a></p>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  async function handleRegister() {
+    const name     = document.getElementById('name').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const confirm  = document.getElementById('confirm').value;
+    const errorMsg = document.getElementById('errorMsg');
+    const btn      = document.getElementById('submitBtn');
+
+    errorMsg.classList.remove('show');
+
+    if (!name || !email || !password || !confirm) {
+      errorMsg.textContent = 'يرجى ملء جميع الحقول';
+      errorMsg.classList.add('show');
+      return;
+    }
+    if (password !== confirm) {
+      errorMsg.textContent = 'كلمتا المرور غير متطابقتين';
+      errorMsg.classList.add('show');
+      return;
+    }
+    if (password.length < 6) {
+      errorMsg.textContent = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+      errorMsg.classList.add('show');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'جارٍ الإنشاء...';
+
+    try {
+      const data = await register(name, email, password);
+      if (data.token) {
+        window.location.href = 'add-recipe.html';
+      } else {
+        errorMsg.textContent = data.message || 'فشل إنشاء الحساب. حاول مرة أخرى.';
+        errorMsg.classList.add('show');
+      }
+    } catch (err) {
+      errorMsg.textContent = 'خطأ في الاتصال بالخادم. تحقق من اتصالك.';
+      errorMsg.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'إنشاء الحساب';
+    }
+  }
+
+  // Allow Enter key to submit
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleRegister();
+  });
+</script>
+</body>
+</html>

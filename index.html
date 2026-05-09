@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>كتالوج وصفات رفيعة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --orange:      #E8440A;
+    --orange-dark: #B33300;
+    --orange-light:#F0855A;
+    --blue-dark:   #1B3A8C;
+    --cream:       #FFF8F4;
+    --text:        #2A1A10;
+  }
+  html, body { width:100%; height:100%; background:#1a0a00; font-family:'Cairo',sans-serif; overflow:hidden; }
+
+  .scene {
+    width:100vw; height:100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+    background:radial-gradient(ellipse at center,#3a1500 0%,#1a0800 60%,#0d0400 100%);
+  }
+  .book-title { color:rgba(255,255,255,0.6); font-size:clamp(13px,1.6vw,17px); letter-spacing:3px; font-weight:400; }
+
+  .book-wrapper {
+    position:relative; width:min(90vw,440px); height:min(80vh,580px);
+    border-radius:6px; overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,0.7),0 0 0 1px rgba(232,68,10,0.3);
+  }
+
+  .slides { position:relative; width:100%; height:100%; }
+  .spread {
+    position:absolute; inset:0; display:block;
+    opacity:0; transform:translateX(60px);
+    transition:opacity 0.45s ease,transform 0.45s ease;
+    pointer-events:none; z-index:0;
+  }
+  .spread.active { opacity:1; transform:translateX(0); pointer-events:auto; z-index:1; }
+
+  .half { width:100%; height:100%; overflow:hidden; position:relative; border-radius:6px; }
+
+  /* Cover */
+  .cover-panel { width:100%; height:100%; background:var(--orange); overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  .cover-panel img { width:100%; height:100%; object-fit:contain; display:block; background:#1a0800; }
+
+  /* Back cover */
+  .back-cover-panel { width:100%; height:100%; background:var(--orange); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
+  .bc-dots  { position:absolute; inset:0; background-image:radial-gradient(circle,rgba(255,255,255,0.12) 1.5px,transparent 1.5px); background-size:22px 22px; }
+  .bc-inner { position:relative; z-index:1; color:white; text-align:center; padding:20px; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .bc-logo  { font-size:clamp(34px,6.5vw,60px); font-weight:900; line-height:1.1; }
+  .bc-sub   { font-size:clamp(14px,2vw,18px); opacity:0.85; }
+  .bc-badge { background:rgba(255,255,255,0.2); border-radius:12px; padding:8px 20px; font-style:italic; font-size:clamp(16px,2.6vw,24px); }
+
+  /* Loading */
+  .loading-panel { width:100%; height:100%; background:var(--cream); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+  .loading-panel p { color:var(--orange); font-size:15px; font-weight:700; }
+  .spinner { width:36px; height:36px; border:3px solid rgba(232,68,10,0.2); border-top-color:var(--orange); border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Empty state */
+  .empty-panel { width:100%; height:100%; background:var(--cream); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:30px; text-align:center; }
+  .empty-panel .empty-icon { font-size:52px; }
+  .empty-panel p { color:#888; font-size:14px; line-height:1.6; }
+  .btn-add-first { background:var(--orange); color:white; border:none; padding:10px 24px; border-radius:24px; font-family:'Cairo',sans-serif; font-size:14px; font-weight:700; cursor:pointer; text-decoration:none; display:inline-block; margin-top:4px; }
+
+  /* Recipe */
+  .recipe-panel { width:100%; height:100%; background:var(--cream); display:flex; flex-direction:column; }
+  .recipe-header { background:var(--orange); padding:clamp(8px,1.5vw,14px) clamp(14px,2.5vw,26px); flex-shrink:0; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .recipe-header::after { content:''; position:absolute; right:-20px; top:50%; transform:translateY(-50%); width:80px; height:80px; background:rgba(255,255,255,0.08); border-radius:50%; }
+  .recipe-header h1 { color:white; font-weight:900; font-size:clamp(15px,2.8vw,24px); text-shadow:1px 2px 6px rgba(0,0,0,0.25); text-align:center; flex:1; position:relative; z-index:1; }
+  .btn-edit-header { background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:4px 10px; border-radius:16px; font-family:'Cairo',sans-serif; font-size:11px; font-weight:700; cursor:pointer; text-decoration:none; flex-shrink:0; position:relative; z-index:1; transition:background 0.2s; white-space:nowrap; }
+  .btn-edit-header:hover { background:rgba(255,255,255,0.35); }
+
+  .recipe-body { display:flex; flex:1; overflow:hidden; }
+  .recipe-img { width:40%; flex-shrink:0; overflow:hidden; }
+  .recipe-img img { width:100%; height:100%; object-fit:contain; display:block; background:#2a1200; }
+  .recipe-img-placeholder { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:white; font-size:clamp(13px,2vw,17px); text-align:center; padding:10px; }
+  .recipe-img-placeholder span { font-size:clamp(36px,6vw,56px); }
+
+  .recipe-content { flex:1; padding:clamp(10px,1.8vw,18px); overflow-y:auto; display:flex; flex-direction:column; gap:clamp(7px,1.2vw,13px); scrollbar-width:thin; scrollbar-color:var(--orange-light) transparent; }
+
+  .badge { display:inline-block; background:var(--blue-dark); color:white; padding:2px 10px; border-radius:20px; font-size:clamp(11px,1.5vw,14px); font-weight:700; margin-bottom:4px; }
+  .ing-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px 6px; }
+  .ing-item { font-size:clamp(11px,1.4vw,14px); padding:clamp(3px,0.5vw,5px) 0; color:var(--text); border-bottom:0.5px solid rgba(232,68,10,0.15); display:flex; align-items:center; gap:4px; line-height:1.3; }
+  .ing-item::before { content:'•'; color:var(--orange); font-weight:900; flex-shrink:0; }
+  .steps-list { counter-reset:step; list-style:none; }
+  .steps-list li { counter-increment:step; font-size:clamp(11px,1.4vw,14px); padding:clamp(3px,0.5vw,5px) 0; color:#3a2010; line-height:1.4; border-bottom:0.5px dotted rgba(232,68,10,0.12); display:flex; gap:5px; }
+  .steps-list li::before { content:counter(step); color:white; background:var(--orange); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; margin-top:1px; }
+  .fill-card { background:#fff; border-right:3px solid var(--orange); border-radius:0 6px 6px 0; padding:clamp(4px,0.8vw,7px) clamp(6px,1vw,10px); }
+  .fill-title { font-size:clamp(11px,1.5vw,14px); font-weight:700; color:var(--blue-dark); margin-bottom:2px; }
+  .fill-body  { font-size:clamp(10px,1.3vw,13px); color:#555; line-height:1.45; }
+
+  /* Video */
+  .video-wrap { position:relative; width:100%; padding-bottom:177.78%; border-radius:8px; overflow:hidden; background:#000; flex-shrink:0; }
+  .video-wrap iframe { position:absolute; top:0; left:0; width:100%; height:100%; border:none; }
+  .video-label { font-size:clamp(10px,1.3vw,13px); font-weight:700; color:var(--orange); letter-spacing:1px; text-align:center; margin-bottom:4px; }
+
+  /* Nav */
+  .nav-bar { display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; }
+  .nav-btn { background:var(--orange); color:white; border:none; padding:clamp(7px,1vw,11px) clamp(14px,2vw,24px); border-radius:30px; font-family:'Cairo',sans-serif; font-size:clamp(13px,1.5vw,16px); font-weight:700; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 18px rgba(232,68,10,0.4); }
+  .nav-btn:hover  { background:var(--orange-dark); transform:scale(1.05); }
+  .nav-btn:active { transform:scale(0.97); }
+  .nav-btn:disabled { opacity:0.35; cursor:not-allowed; transform:none; }
+  /* Add recipe button — only shown when logged in */
+  .btn-add-recipe { background:rgba(255,255,255,0.12); color:white; border:1px solid rgba(255,255,255,0.3); padding:clamp(7px,1vw,11px) clamp(12px,1.8vw,20px); border-radius:30px; font-family:'Cairo',sans-serif; font-size:clamp(12px,1.4vw,15px); font-weight:700; cursor:pointer; transition:all 0.2s; text-decoration:none; display:none; }
+  .btn-add-recipe:hover { background:rgba(255,255,255,0.22); }
+  .btn-add-recipe.visible { display:inline-block; }
+  /* Sign-in button — only shown when NOT logged in */
+  .btn-signin { background:rgba(255,255,255,0.12); color:white; border:1px solid rgba(255,255,255,0.3); padding:clamp(7px,1vw,11px) clamp(12px,1.8vw,20px); border-radius:30px; font-family:'Cairo',sans-serif; font-size:clamp(12px,1.4vw,15px); font-weight:700; cursor:pointer; transition:all 0.2s; text-decoration:none; display:none; }
+  .btn-signin:hover { background:rgba(255,255,255,0.22); }
+  .btn-signin.visible { display:inline-block; }
+  /* Logout button — only shown when logged in */
+  .btn-logout-nav { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.15); padding:clamp(6px,0.8vw,9px) clamp(10px,1.4vw,16px); border-radius:30px; font-family:'Cairo',sans-serif; font-size:clamp(11px,1.2vw,13px); font-weight:700; cursor:pointer; transition:all 0.2s; text-decoration:none; display:none; }
+  .btn-logout-nav:hover { color:white; border-color:rgba(255,255,255,0.3); background:rgba(255,255,255,0.12); }
+  .btn-logout-nav.visible { display:inline-block; }
+  .dots-bar { display:flex; gap:8px; align-items:center; }
+  .dot { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,0.25); transition:background 0.3s,transform 0.3s; cursor:pointer; }
+  .dot.active { background:var(--orange); transform:scale(1.4); }
+  .hint { color:rgba(255,255,255,0.3); font-size:clamp(11px,1.2vw,14px); letter-spacing:1px; }
+  /* Cover edit button */
+  .btn-edit-cover { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.45); color:white; border:1px solid rgba(255,255,255,0.35); padding:5px 14px; border-radius:20px; font-family:'Cairo',sans-serif; font-size:12px; font-weight:700; cursor:pointer; display:none; transition:background 0.2s; white-space:nowrap; z-index:10; }
+  .btn-edit-cover:hover { background:rgba(0,0,0,0.65); }
+  .btn-edit-cover.visible { display:block; }
+  /* Cover edit modal */
+  .cover-modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; display:none; align-items:center; justify-content:center; }
+  .cover-modal-backdrop.open { display:flex; }
+  .cover-modal { background:#fff8f4; border-radius:12px; width:min(90vw,360px); padding:24px; display:flex; flex-direction:column; gap:14px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+  .cover-modal h2 { font-size:16px; font-weight:900; color:#2a1a10; text-align:center; }
+  .cover-modal input { border:1.5px solid rgba(232,68,10,0.3); border-radius:8px; padding:9px 12px; font-family:'Cairo',sans-serif; font-size:13px; color:#2a1a10; outline:none; text-align:right; width:100%; }
+  .cover-modal input:focus { border-color:#e8440a; box-shadow:0 0 0 3px rgba(232,68,10,0.12); }
+  .cover-modal-preview { width:100%; height:120px; object-fit:cover; border-radius:8px; display:none; }
+  .cover-modal-actions { display:flex; gap:10px; }
+  .cover-modal-actions button { flex:1; padding:10px; border-radius:24px; font-family:'Cairo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; border:none; transition:all 0.2s; }
+  .btn-save-cover { background:#e8440a; color:white; box-shadow:0 4px 14px rgba(232,68,10,0.35); }
+  .btn-save-cover:hover { background:#b33300; }
+  .btn-cancel-cover { background:rgba(0,0,0,0.07); color:#555; }
+  .btn-cancel-cover:hover { background:rgba(0,0,0,0.13); }
+  .btn-clear-cover { background:none; color:#c0392b; border:1px solid rgba(192,57,43,0.3) !important; font-size:12px !important; padding:6px 12px !important; border-radius:20px !important; flex:unset !important; }
+</style>
+</head>
+<body>
+<div class="scene">
+  <div style="display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;">
+    <p class="book-title">كتالوج الوصفات</p>
+    <a class="btn-signin" id="btnSignin" href="login.html">تسجيل الدخول 🔑</a>
+    <button class="btn-logout-nav" id="btnLogout" onclick="logout()">خروج</button>
+  </div>
+
+  <div class="book-wrapper">
+    <div class="slides" id="slides">
+
+      <!-- Cover — always first -->
+      <div class="spread active" id="p-cover"><div class="half">
+        <div class="cover-panel" id="coverPanel" style="position:relative;">
+          <button class="btn-edit-cover" id="btnEditCover" onclick="openCoverModal()">✏️ تعديل الغلاف</button>
+        </div>
+      </div></div>
+
+  <!-- Cover edit modal -->
+  <div class="cover-modal-backdrop" id="coverModalBackdrop">
+    <div class="cover-modal">
+      <h2>تعديل صورة الغلاف</h2>
+      <input type="text" id="coverUrlInput" placeholder="الصق رابط الصورة (i.ibb.co/... أو raw.githubusercontent.com/...)" oninput="previewCoverInput(this.value)"/>
+      <p style="font-size:11px;color:#aaa;text-align:center;">💡 استخدم Direct link من ibb.co أو رابط raw من GitHub</p>
+      <img id="coverModalPreview" class="cover-modal-preview" alt="معاينة"/>
+      <p id="coverModalErr" style="display:none;font-size:12px;color:#c0392b;text-align:center;">تعذّر تحميل الصورة — تأكد أن الرابط مباشر</p>
+      <div class="cover-modal-actions">
+        <button class="btn-save-cover" onclick="saveCover()">حفظ</button>
+        <button class="btn-cancel-cover" onclick="closeCoverModal()">إلغاء</button>
+        <button class="btn-clear-cover" onclick="clearCover()">× حذف الصورة</button>
+      </div>
+    </div>
+  </div>
+
+      <!-- Recipe pages injected by JS -->
+
+      <!-- Back cover — always last -->
+      <div class="spread" id="p-backcover"><div class="half">
+        <div class="back-cover-panel">
+          <div class="bc-dots"></div>
+          <div class="bc-inner">
+            <div class="bc-logo">خميرة<br/>رفيعة</div>
+            <div class="bc-sub">الشهيوات لينا ولحبابنا</div>
+            <div class="bc-badge">Levure Rafiaa</div>
+          </div>
+        </div>
+      </div></div>
+
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <button class="nav-btn" id="btnNext" onclick="nextPage()">التالي ▶</button>
+    <div class="dots-bar" id="dotsBar"></div>
+    <button class="nav-btn" id="btnPrev" onclick="prevPage()">◀ السابق</button>
+    <!-- Only visible when logged in -->
+    <a class="btn-add-recipe" id="btnAddRecipe" href="add-recipe.html">+ وصفة جديدة</a>
+
+  </div>
+  <p class="hint">← → للتنقل بلوحة المفاتيح  |  سحب لليمين أو لليسار على الجوال</p>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script>
+// ── Auth state ────────────────────────────────────────────────
+function currentUserId() {
+  try { return JSON.parse(localStorage.getItem('user') || '{}')._id || null; }
+  catch { return null; }
+}
+
+const loggedIn = isLoggedIn();
+const myId     = currentUserId();
+
+// Show "Add recipe" button only when logged in
+if (loggedIn) {
+  document.getElementById('btnAddRecipe').classList.add('visible');
+  document.getElementById('btnLogout').classList.add('visible');
+  document.getElementById('btnEditCover').classList.add('visible');
+} else {
+  document.getElementById('btnSignin').classList.add('visible');
+}
+
+// ── Escape HTML ───────────────────────────────────────────────
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+    .replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Build recipe slide ────────────────────────────────────────
+function buildRecipeSlide(recipe) {
+  const ownerId = String(recipe.createdBy?._id || recipe.createdBy || '');
+  const isOwner = loggedIn && myId && String(myId) === ownerId;
+
+  // Image
+  const imgBg  = recipe.category === 'بريوش' ? '#c4872a'
+               : recipe.category === 'حلويات' ? '#a0522d'
+               : recipe.category === 'معجنات'  ? '#8b6914' : '#b84a1a';
+  const emoji  = recipe.category === 'بريوش' ? '🌀'
+               : recipe.category === 'حلويات' ? '🍰'
+               : recipe.category === 'معجنات'  ? '🥐' : '🍞';
+
+  const imgHtml = recipe.coverPhoto
+    ? `<img src="${recipe.coverPhoto}" alt="${esc(recipe.name)}" onerror="this.style.display='none'"/>`
+    : `<div class="recipe-img-placeholder" style="background:${imgBg}"><span>${emoji}</span><p>${esc(recipe.name)}</p></div>`;
+
+  // Ingredients
+  const ingsHtml = (recipe.ingredients || [])
+    .map(i => `<div class="ing-item">${esc(i)}</div>`).join('');
+
+  // Steps
+  const stepsHtml = (recipe.steps || [])
+    .map(s => `<li>${esc(s)}</li>`).join('');
+
+  // Notes / filling
+  const notesHtml = recipe.notes
+    ? `<div class="fill-card"><div class="fill-title">ملاحظات</div><div class="fill-body">${esc(recipe.notes)}</div></div>`
+    : '';
+
+  // YouTube — only render if valid ID present
+  const videoHtml = recipe.youtubeId ? `
+    <div class="video-label">🎬 شورتس الوصفة</div>
+    <div class="video-wrap">
+      <iframe src="https://www.youtube.com/embed/${recipe.youtubeId}?rel=0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen loading="lazy"></iframe>
+    </div>` : '';
+
+  // Edit button — only for the recipe owner
+  const editBtn = isOwner
+    ? `<a class="btn-edit-header" href="edit-recipe.html?id=${recipe._id}">✏️ تعديل</a>`
+    : '';
+
+  // Metadata row
+  const metaHtml = [
+    recipe.temperature      ? `🌡 ${recipe.temperature}°م` : '',
+    recipe.fermentationTime ? `⏱ تخمير ${recipe.fermentationTime} د` : '',
+    recipe.bakeTime         ? `🔥 خبز ${recipe.bakeTime} د` : '',
+  ].filter(Boolean).join(' · ');
+
+  const slide = document.createElement('div');
+  slide.className = 'spread';
+  slide.id = `p-recipe-${recipe._id}`;
+  slide.innerHTML = `<div class="half">
+    <div class="recipe-panel">
+      <div class="recipe-header">
+        <h1>${esc(recipe.name)}</h1>
+        ${editBtn}
+      </div>
+      <div class="recipe-body">
+        <div class="recipe-img">${imgHtml}</div>
+        <div class="recipe-content">
+          ${metaHtml ? `<div style="font-size:clamp(10px,1.2vw,12px);color:#888;">${metaHtml}</div>` : ''}
+          <div><span class="badge">مكونات</span>
+            <div class="ing-grid">${ingsHtml}</div>
+          </div>
+          ${notesHtml}
+          <div><span class="badge">تحضير</span>
+            <ol class="steps-list">${stepsHtml}</ol>
+          </div>
+          ${videoHtml}
+        </div>
+      </div>
+    </div>
+  </div>`;
+  return slide;
+}
+
+// ── Cover photo ───────────────────────────────────────────────
+const COVER_KEY = 'catalogue_cover_url';
+
+function applyCoverPhoto() {
+  const url = localStorage.getItem(COVER_KEY);
+  const panel = document.getElementById('coverPanel');
+  // Remove existing cover img if any
+  const existing = panel.querySelector('img.cover-img');
+  if (existing) existing.remove();
+  if (url) {
+    const img = document.createElement('img');
+    img.className = 'cover-img';
+    img.src = url;
+    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#1a0800;';
+    img.onerror = () => img.remove();
+    panel.insertBefore(img, panel.firstChild);
+  }
+}
+
+function openCoverModal() {
+  const url = localStorage.getItem(COVER_KEY) || '';
+  document.getElementById('coverUrlInput').value = url;
+  document.getElementById('coverModalErr').style.display = 'none';
+  const preview = document.getElementById('coverModalPreview');
+  if (url) {
+    preview.src = url;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+    preview.src = '';
+  }
+  document.getElementById('coverModalBackdrop').classList.add('open');
+}
+
+function closeCoverModal() {
+  document.getElementById('coverModalBackdrop').classList.remove('open');
+}
+
+function previewCoverInput(url) {
+  const preview = document.getElementById('coverModalPreview');
+  const err = document.getElementById('coverModalErr');
+  if (!url.trim()) {
+    preview.style.display = 'none';
+    err.style.display = 'none';
+    return;
+  }
+  preview.onload  = () => { preview.style.display = 'block'; err.style.display = 'none'; };
+  preview.onerror = () => { preview.style.display = 'none'; err.style.display = 'block'; };
+  preview.src = url.trim();
+}
+
+function saveCover() {
+  const url = document.getElementById('coverUrlInput').value.trim();
+  if (url) localStorage.setItem(COVER_KEY, url);
+  else localStorage.removeItem(COVER_KEY);
+  applyCoverPhoto();
+  closeCoverModal();
+}
+
+function clearCover() {
+  localStorage.removeItem(COVER_KEY);
+  document.getElementById('coverUrlInput').value = '';
+  document.getElementById('coverModalPreview').style.display = 'none';
+  document.getElementById('coverModalErr').style.display = 'none';
+  applyCoverPhoto();
+  closeCoverModal();
+}
+
+// Close modal on backdrop click
+document.getElementById('coverModalBackdrop').addEventListener('click', function(e) {
+  if (e.target === this) closeCoverModal();
+});
+
+// Apply saved cover on page load
+applyCoverPhoto();
+
+// ── Load recipes ────────────────────────────────────────────────
+async function loadRecipes() {
+  const slidesEl  = document.getElementById('slides');
+  const backCover = document.getElementById('p-backcover');
+
+  // Loading indicator
+  const loadSlide = document.createElement('div');
+  loadSlide.className = 'spread active';
+  loadSlide.id = 'p-loading';
+  loadSlide.innerHTML = `<div class="half"><div class="loading-panel">
+    <div class="spinner"></div><p>جارٍ تحميل الوصفات…</p>
+  </div></div>`;
+  document.getElementById('p-cover').classList.remove('active');
+  slidesEl.insertBefore(loadSlide, backCover);
+
+  let recipes = [];
+  try {
+    const res = await fetch(`${API}/recipes`);
+    recipes = await res.json();
+  } catch(e) {
+    loadSlide.querySelector('p').textContent = 'تعذّر الاتصال بالخادم';
+    return;
+  }
+
+  loadSlide.remove();
+  document.getElementById('p-cover').classList.add('active');
+
+  if (!Array.isArray(recipes) || recipes.length === 0) {
+    document.getElementById('coverPanel').innerHTML = `
+      <div class="empty-panel">
+        <div class="empty-icon">📖</div>
+        <p>لا توجد وصفات بعد.<br/>أضف أول وصفة لك!</p>
+        ${loggedIn ? '<a class="btn-add-first" href="add-recipe.html">+ إضافة وصفة</a>' : ''}
+      </div>`;
+    initNav();
+    return;
+  }
+
+  recipes.forEach(recipe => {
+    slidesEl.insertBefore(buildRecipeSlide(recipe), backCover);
+  });
+
+  initNav();
+}
+
+// ── Navigation ────────────────────────────────────────────────
+let cur = 0, animating = false;
+
+function initNav() {
+  const spreads = Array.from(document.querySelectorAll('.spread'));
+  const dotsBar = document.getElementById('dotsBar');
+  dotsBar.innerHTML = '';
+  dotsBar.setAttribute('dir', 'ltr');
+  spreads.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsBar.appendChild(d);
+  });
+  cur = 0;
+  updateUI();
+}
+
+function goTo(next) {
+  const spreads = Array.from(document.querySelectorAll('.spread'));
+  const N = spreads.length;
+  if (animating || next === cur || next < 0 || next >= N) return;
+  animating = true;
+  const dir = next > cur ? 1 : -1;
+  const current = spreads[cur], target = spreads[next];
+
+  target.style.transition = 'none';
+  target.style.opacity    = '0';
+  target.style.transform  = dir > 0 ? 'translateX(60px)' : 'translateX(-60px)';
+  target.classList.add('active');
+  void target.offsetHeight;
+
+  target.style.transition  = 'opacity 0.42s ease, transform 0.42s ease';
+  target.style.opacity     = '1';
+  target.style.transform   = 'translateX(0)';
+  current.style.transition = 'opacity 0.42s ease, transform 0.42s ease';
+  current.style.opacity    = '0';
+  current.style.transform  = dir > 0 ? 'translateX(-60px)' : 'translateX(60px)';
+
+  setTimeout(() => {
+    current.classList.remove('active');
+    current.style.cssText = '';
+    target.style.cssText  = '';
+    cur = next;
+    updateUI();
+    animating = false;
+  }, 440);
+}
+
+function nextPage() { goTo(cur + 1); }
+function prevPage() { goTo(cur - 1); }
+
+function updateUI() {
+  const N = document.querySelectorAll('.spread').length;
+  document.getElementById('btnPrev').disabled = (cur === 0);
+  document.getElementById('btnNext').disabled = (cur === N - 1);
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === cur));
+}
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextPage();
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prevPage();
+});
+
+// Touch swipe
+let tx = 0;
+document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive:true });
+document.addEventListener('touchend',   e => {
+  const dx = tx - e.changedTouches[0].clientX;
+  if (Math.abs(dx) > 45) { dx > 0 ? nextPage() : prevPage(); }
+});
+
+// Boot
+loadRecipes();
+</script>
+</body>
+</html>

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>إضافة وصفة – خميرة رفيعة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --orange:      #E8440A;
+    --orange-dark: #B33300;
+    --orange-light:#F0855A;
+    --blue-dark:   #1B3A8C;
+    --cream:       #FFF8F4;
+    --text:        #2A1A10;
+  }
+  html, body {
+    width: 100%; min-height: 100%;
+    background: #1a0a00;
+    font-family: 'Cairo', sans-serif;
+  }
+  .scene {
+    width: 100vw; min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 18px;
+    background: radial-gradient(ellipse at center, #3a1500 0%, #1a0800 60%, #0d0400 100%);
+    padding: 28px 16px 40px;
+  }
+  .book-title {
+    color: rgba(255,255,255,0.6);
+    font-size: clamp(13px,1.6vw,17px);
+    letter-spacing: 3px; font-weight: 400;
+  }
+  .card {
+    background: var(--cream);
+    border-radius: 12px;
+    width: min(95vw, 560px);
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(232,68,10,0.3);
+  }
+  .card-header {
+    background: var(--orange);
+    padding: 20px 28px;
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-header::after {
+    content: ''; position: absolute;
+    left: -20px; top: 50%; transform: translateY(-50%);
+    width: 90px; height: 90px;
+    background: rgba(255,255,255,0.08); border-radius: 50%;
+  }
+  .card-header h1 {
+    color: white; font-weight: 900;
+    font-size: clamp(18px,3vw,26px);
+    text-shadow: 1px 2px 6px rgba(0,0,0,0.25);
+    position: relative; z-index: 1;
+  }
+  .btn-logout {
+    background: rgba(255,255,255,0.2); color: white;
+    border: 1px solid rgba(255,255,255,0.35);
+    padding: 6px 14px; border-radius: 20px;
+    font-family: 'Cairo', sans-serif; font-size: 13px;
+    cursor: pointer; position: relative; z-index: 1;
+    transition: background 0.2s;
+  }
+  .btn-logout:hover { background: rgba(255,255,255,0.32); }
+
+  .card-body { padding: 24px 28px; display: flex; flex-direction: column; gap: 18px; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 14px; font-weight: 700; color: var(--text); }
+  .field input,
+  .field textarea,
+  .field select {
+    border: 1.5px solid rgba(232,68,10,0.25);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px; color: var(--text);
+    background: white; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    text-align: right;
+    resize: vertical;
+  }
+  .field input:focus,
+  .field textarea:focus,
+  .field select:focus {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(232,68,10,0.12);
+  }
+  .field textarea { min-height: 90px; }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* Dynamic ingredients list */
+  .ing-list { display: flex; flex-direction: column; gap: 8px; }
+  .ing-row { display: flex; gap: 8px; align-items: center; }
+  .ing-row input { flex: 1; }
+  .btn-remove {
+    background: none; border: 1.5px solid rgba(232,68,10,0.3);
+    color: var(--orange); border-radius: 6px;
+    width: 32px; height: 38px;
+    font-size: 18px; cursor: pointer; flex-shrink: 0;
+    transition: background 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn-remove:hover { background: rgba(232,68,10,0.08); }
+  .btn-add-ing {
+    background: none; border: 1.5px dashed rgba(232,68,10,0.4);
+    color: var(--orange); border-radius: 8px;
+    padding: 8px; font-family: 'Cairo', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-add-ing:hover { background: rgba(232,68,10,0.06); }
+
+  .divider {
+    border: none; border-top: 1px solid rgba(232,68,10,0.15);
+  }
+
+  .btn-submit {
+    background: var(--orange); color: white; border: none;
+    padding: 13px 28px; border-radius: 30px;
+    font-family: 'Cairo', sans-serif;
+    font-size: clamp(14px,1.6vw,16px); font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 18px rgba(232,68,10,0.4);
+    width: 100%; margin-top: 4px;
+  }
+  .btn-submit:hover  { background: var(--orange-dark); transform: scale(1.02); }
+  .btn-submit:active { transform: scale(0.98); }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .msg {
+    font-size: 13px; text-align: center;
+    border-radius: 6px; padding: 9px 14px;
+    display: none;
+  }
+  .msg.show { display: block; }
+  .msg.error   { color: #c0392b; background: #fde8e8; }
+  .msg.success { color: #1a6e2e; background: #e6f7eb; }
+
+  .back-link {
+    color: rgba(255,255,255,0.45); font-size: 13px;
+    text-decoration: none; letter-spacing: 1px;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--orange-light); }
+
+  .photo-preview {
+    width: 100%; max-height: 220px; object-fit: cover;
+    border-radius: 8px;
+  }
+  .photo-clear {
+    margin-top: 8px;
+    background: none; border: 1.5px solid rgba(232,68,10,0.3);
+    color: var(--orange); border-radius: 6px; padding: 4px 12px;
+    font-family: 'Cairo', sans-serif; font-size: 12px; cursor: pointer;
+  }
+  .photo-clear:hover { background: rgba(232,68,10,0.08); }
+</style>
+</head>
+<body>
+<div class="scene">
+  <p class="book-title">Catalogue de Recettes · خميرة رفيعة</p>
+
+  <div class="card">
+    <div class="card-header">
+      <h1>إضافة وصفة جديدة</h1>
+      <button class="btn-logout" onclick="logout()">تسجيل الخروج</button>
+    </div>
+
+    <div class="card-body">
+      <div id="statusMsg" class="msg"></div>
+
+      <!-- Recipe name -->
+      <div class="field">
+        <label for="recipeName">اسم الوصفة *</label>
+        <input type="text" id="recipeName" placeholder="مثال: الخبز الرخامي" required/>
+      </div>
+
+      <!-- Category & temp row -->
+      <div class="row">
+        <div class="field">
+          <label for="category">الفئة</label>
+          <select id="category">
+            <option value="">اختر الفئة</option>
+            <option value="خبز">خبز</option>
+            <option value="بريوش">بريوش</option>
+            <option value="معجنات">معجنات</option>
+            <option value="حلويات">حلويات</option>
+            <option value="أخرى">أخرى</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="temp">درجة الحرارة (°م)</label>
+          <input type="number" id="temp" placeholder="مثال: 200" min="0" max="300"/>
+        </div>
+      </div>
+
+      <!-- Fermentation & bake time -->
+      <div class="row">
+        <div class="field">
+          <label for="fermentTime">وقت التخمير (دقيقة)</label>
+          <input type="number" id="fermentTime" placeholder="مثال: 45" min="0"/>
+        </div>
+        <div class="field">
+          <label for="bakeTime">وقت الخبز (دقيقة)</label>
+          <input type="number" id="bakeTime" placeholder="مثال: 18" min="0"/>
+        </div>
+      </div>
+
+      <hr class="divider"/>
+
+      <!-- Ingredients -->
+      <div class="field">
+        <label>المكونات *</label>
+        <div class="ing-list" id="ingList">
+          <div class="ing-row">
+            <input type="text" placeholder="مثال: 1 كغ دقيق"/>
+            <button class="btn-remove" onclick="removeIng(this)" title="حذف">×</button>
+          </div>
+        </div>
+        <button class="btn-add-ing" onclick="addIng()">+ إضافة مكوّن</button>
+      </div>
+
+      <hr class="divider"/>
+
+      <!-- Steps -->
+      <div class="field">
+        <label for="steps">خطوات التحضير *</label>
+        <textarea id="steps" placeholder="اكتب كل خطوة في سطر منفصل…"></textarea>
+      </div>
+
+      <!-- YouTube link -->
+      <div class="field">
+        <label for="youtube">رابط يوتيوب شورتس (اختياري)</label>
+        <input type="text" id="youtube" placeholder="https://www.youtube.com/shorts/..." oninput="previewYoutube(this.value)"/>
+        <div id="ytPreviewWrap" style="display:none;margin-top:8px;border-radius:10px;overflow:hidden;background:#000;position:relative;padding-bottom:177.78%;">
+          <iframe id="ytPreviewFrame" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen></iframe>
+        </div>
+        <p id="ytError" style="display:none;font-size:12px;color:#c0392b;margin-top:4px;">رابط شورتس غير صحيح، مثال: https://youtube.com/shorts/xxxx</p>
+      </div>
+
+      <!-- Filling / notes -->
+      <div class="field">
+        <label for="notes">الحشوة / ملاحظات (اختياري)</label>
+        <textarea id="notes" placeholder="مثال: جبن أبيض + قزبر، أو أي ملاحظات إضافية…" style="min-height:60px;"></textarea>
+      </div>
+
+      <!-- Cover photo -->
+      <div class="field">
+        <label>صورة الغلاف (اختياري)</label>
+        <div class="photo-drop" id="photoDrop" onclick="document.getElementById('photoInput').click()">
+          <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handlePhoto(this)"/>
+          <div class="drop-icon" id="dropIcon">🖼️</div>
+          <div class="drop-text" id="dropText"><strong>اضغط لاختيار صورة</strong><br/>JPG, PNG, WEBP · تُضغط تلقائياً</div>
+        </div>
+        <img id="photoPreview" class="photo-preview" alt="معاينة الصورة" style="display:none;margin-top:8px;border-radius:8px;width:100%;max-height:160px;object-fit:contain;"/>
+        <button class="photo-clear" id="photoClear" style="display:none;margin-top:6px;" onclick="clearPhoto()">× حذف الصورة</button>
+      </div>
+
+      <button class="btn-submit" id="submitBtn" onclick="handleSubmit()">حفظ الوصفة ✓</button>
+    </div>
+  </div>
+
+  <a class="back-link" href="index.html">← العودة إلى الكتالوج</a>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  // ── Photo upload → base64 ────────────────────────────────
+  let coverPhotoUrl = null;
+
+  function handlePhoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 600;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else       { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        coverPhotoUrl = canvas.toDataURL('image/jpeg', 0.7);
+        const preview = document.getElementById('photoPreview');
+        preview.src = coverPhotoUrl;
+        preview.style.display = 'block';
+        document.getElementById('photoClear').style.display = 'inline-block';
+        document.getElementById('dropIcon').style.display = 'none';
+        document.getElementById('dropText').style.display = 'none';
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearPhoto() {
+    coverPhotoUrl = null;
+    document.getElementById('photoInput').value           = '';
+    document.getElementById('photoPreview').src           = '';
+    document.getElementById('photoPreview').style.display = 'none';
+    document.getElementById('photoClear').style.display   = 'none';
+    document.getElementById('dropIcon').style.display     = '';
+    document.getElementById('dropText').style.display     = '';
+  }
+
+  // Guard: redirect to login if not authenticated
+  requireAuth();
+
+  function addIng() {
+    const list = document.getElementById('ingList');
+    const row = document.createElement('div');
+    row.className = 'ing-row';
+    row.innerHTML = `
+      <input type="text" placeholder="مثال: 500 مل ماء"/>
+      <button class="btn-remove" onclick="removeIng(this)" title="حذف">×</button>
+    `;
+    list.appendChild(row);
+    row.querySelector('input').focus();
+  }
+
+  function removeIng(btn) {
+    const list = document.getElementById('ingList');
+    if (list.children.length > 1) {
+      btn.parentElement.remove();
+    }
+  }
+
+  function extractYoutubeId(url) {
+    if (!url) return null;
+    // Support Shorts: youtube.com/shorts/ID
+    const shortsMatch = url.match(/youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/);
+    if (shortsMatch) return shortsMatch[1];
+    // Fallback: normal watch?v= or youtu.be or embed
+    const match = url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+    return match ? match[1] : null;
+  }
+
+  function previewYoutube(url) {
+    const wrap  = document.getElementById('ytPreviewWrap');
+    const frame = document.getElementById('ytPreviewFrame');
+    const err   = document.getElementById('ytError');
+    const id    = extractYoutubeId(url);
+    if (!url) {
+      wrap.style.display = 'none';
+      err.style.display  = 'none';
+      frame.src = '';
+      return;
+    }
+    if (id) {
+      frame.src          = 'https://www.youtube.com/embed/' + id + '?rel=0';
+      wrap.style.display = 'block';
+      err.style.display  = 'none';
+    } else {
+      wrap.style.display = 'none';
+      err.style.display  = 'block';
+      frame.src = '';
+    }
+  }
+
+  async function handleSubmit() {
+    const name      = document.getElementById('recipeName').value.trim();
+    const category  = document.getElementById('category').value;
+    const temp      = document.getElementById('temp').value;
+    const ferment   = document.getElementById('fermentTime').value;
+    const bakeTime  = document.getElementById('bakeTime').value;
+    const stepsRaw  = document.getElementById('steps').value.trim();
+    const youtube   = document.getElementById('youtube').value.trim();
+    const notes     = document.getElementById('notes').value.trim();
+    const statusMsg = document.getElementById('statusMsg');
+    const btn       = document.getElementById('submitBtn');
+
+    const ingredients = Array.from(
+      document.querySelectorAll('#ingList .ing-row input')
+    ).map(i => i.value.trim()).filter(Boolean);
+
+    statusMsg.className = 'msg';
+    statusMsg.classList.remove('show');
+
+    if (!name) {
+      showMsg('error', 'يرجى إدخال اسم الوصفة');
+      return;
+    }
+    if (ingredients.length === 0) {
+      showMsg('error', 'يرجى إضافة مكوّن واحد على الأقل');
+      return;
+    }
+    if (!stepsRaw) {
+      showMsg('error', 'يرجى كتابة خطوات التحضير');
+      return;
+    }
+
+    const steps = stepsRaw.split('\n').map(s => s.trim()).filter(Boolean);
+    const youtubeId = extractYoutubeId(youtube);
+
+    const recipe = {
+      name,
+      category: category || undefined,
+      temperature: temp ? Number(temp) : undefined,
+      fermentationTime: ferment ? Number(ferment) : undefined,
+      bakeTime: bakeTime ? Number(bakeTime) : undefined,
+      ingredients,
+      steps,
+      youtubeId: youtubeId || undefined,
+      notes: notes || undefined,
+      coverPhoto: coverPhotoUrl || undefined,  // debug: logged below
+    };
+
+    btn.disabled = true;
+    btn.textContent = 'جارٍ الحفظ...';
+
+    console.log("Saving recipe with coverPhoto:", recipe.coverPhoto);
+    try {
+      const data = await createRecipe(recipe);
+      if (data && (data._id || data.id || data.success)) {
+        showMsg('success', '✓ تم حفظ الوصفة بنجاح!');
+        resetForm();
+      } else {
+        showMsg('error', data.message || 'فشل حفظ الوصفة. حاول مرة أخرى.');
+      }
+    } catch (err) {
+      showMsg('error', 'خطأ في الاتصال بالخادم. تحقق من اتصالك.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'حفظ الوصفة ✓';
+    }
+  }
+
+  function showMsg(type, text) {
+    const el = document.getElementById('statusMsg');
+    el.className = `msg ${type} show`;
+    el.textContent = text;
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function resetForm() {
+    document.getElementById('recipeName').value = '';
+    document.getElementById('category').value   = '';
+    document.getElementById('temp').value        = '';
+    document.getElementById('fermentTime').value = '';
+    document.getElementById('bakeTime').value    = '';
+    document.getElementById('steps').value       = '';
+    document.getElementById('youtube').value     = '';
+    document.getElementById('notes').value       = '';
+    clearPhoto();
+    // Reset ingredients to one empty row
+    const list = document.getElementById('ingList');
+    list.innerHTML = `
+      <div class="ing-row">
+        <input type="text" placeholder="مثال: 1 كغ دقيق"/>
+        <button class="btn-remove" onclick="removeIng(this)" title="حذف">×</button>
+      </div>`;
+  }
+</script>
+</body>
+</html>
