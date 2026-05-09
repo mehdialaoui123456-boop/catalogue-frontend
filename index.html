@@ -108,9 +108,6 @@
   .btn-add-recipe:hover { background:rgba(255,255,255,0.22); }
   .btn-add-recipe.visible { display:inline-block; }
   /* Sign-in button — only shown when NOT logged in */
-  .btn-signin { background:rgba(255,255,255,0.12); color:white; border:1px solid rgba(255,255,255,0.3); padding:clamp(7px,1vw,11px) clamp(12px,1.8vw,20px); border-radius:30px; font-family:'Cairo',sans-serif; font-size:clamp(12px,1.4vw,15px); font-weight:700; cursor:pointer; transition:all 0.2s; text-decoration:none; display:none; }
-  .btn-signin:hover { background:rgba(255,255,255,0.22); }
-  .btn-signin.visible { display:inline-block; }
   /* Logout button — only shown when logged in */
   .btn-logout-nav { background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.15); padding:clamp(6px,0.8vw,9px) clamp(10px,1.4vw,16px); border-radius:30px; font-family:'Cairo',sans-serif; font-size:clamp(11px,1.2vw,13px); font-weight:700; cursor:pointer; transition:all 0.2s; text-decoration:none; display:none; }
   .btn-logout-nav:hover { color:white; border-color:rgba(255,255,255,0.3); background:rgba(255,255,255,0.12); }
@@ -144,7 +141,6 @@
 <div class="scene">
   <div style="display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;">
     <p class="book-title">كتالوج الوصفات</p>
-    <a class="btn-signin" id="btnSignin" href="login.html">تسجيل الدخول 🔑</a>
     <button class="btn-logout-nav" id="btnLogout" onclick="logout()">خروج</button>
   </div>
 
@@ -220,7 +216,6 @@ if (loggedIn) {
   document.getElementById('btnLogout').classList.add('visible');
   document.getElementById('btnEditCover').classList.add('visible');
 } else {
-  document.getElementById('btnSignin').classList.add('visible');
 }
 
 // ── Escape HTML ───────────────────────────────────────────────
