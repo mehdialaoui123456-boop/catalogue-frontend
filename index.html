@@ -305,12 +305,12 @@ function buildRecipeSlide(recipe) {
 }
 
 // ── Cover photo ───────────────────────────────────────────────
-const COVER_KEY = 'catalogue_cover_url';
+// ── Cover photo — loaded from & saved to the database ────────
+let _currentCoverUrl = null;
 
-function applyCoverPhoto() {
-  const url = localStorage.getItem(COVER_KEY);
+function applyCoverPhoto(url) {
+  _currentCoverUrl = url || null;
   const panel = document.getElementById('coverPanel');
-  // Remove existing cover img if any
   const existing = panel.querySelector('img.cover-img');
   if (existing) existing.remove();
   if (url) {
@@ -323,13 +323,20 @@ function applyCoverPhoto() {
   }
 }
 
+async function loadCoverFromDB() {
+  try {
+    const res  = await fetch(`${API}/settings/cover`);
+    const data = await res.json();
+    if (data.coverPhoto) applyCoverPhoto(data.coverPhoto);
+  } catch (e) { /* silently ignore */ }
+}
+
 function openCoverModal() {
-  const url = localStorage.getItem(COVER_KEY) || '';
-  document.getElementById('coverUrlInput').value = url;
+  document.getElementById('coverUrlInput').value = _currentCoverUrl || '';
   document.getElementById('coverModalErr').style.display = 'none';
   const preview = document.getElementById('coverModalPreview');
-  if (url) {
-    preview.src = url;
+  if (_currentCoverUrl) {
+    preview.src = _currentCoverUrl;
     preview.style.display = 'block';
   } else {
     preview.style.display = 'none';
@@ -355,20 +362,34 @@ function previewCoverInput(url) {
   preview.src = url.trim();
 }
 
-function saveCover() {
-  const url = document.getElementById('coverUrlInput').value.trim();
-  if (url) localStorage.setItem(COVER_KEY, url);
-  else localStorage.removeItem(COVER_KEY);
-  applyCoverPhoto();
+async function saveCover() {
+  const url   = document.getElementById('coverUrlInput').value.trim();
+  const token = localStorage.getItem('token');
+  try {
+    const res  = await fetch(`${API}/settings/cover`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ coverPhoto: url || null }),
+    });
+    const data = await res.json();
+    applyCoverPhoto(data.coverPhoto);
+  } catch (e) { alert('تعذّر حفظ الغلاف'); }
   closeCoverModal();
 }
 
-function clearCover() {
-  localStorage.removeItem(COVER_KEY);
+async function clearCover() {
+  const token = localStorage.getItem('token');
+  try {
+    await fetch(`${API}/settings/cover`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ coverPhoto: null }),
+    });
+  } catch (e) { /* ignore */ }
+  applyCoverPhoto(null);
   document.getElementById('coverUrlInput').value = '';
   document.getElementById('coverModalPreview').style.display = 'none';
   document.getElementById('coverModalErr').style.display = 'none';
-  applyCoverPhoto();
   closeCoverModal();
 }
 
@@ -377,8 +398,8 @@ document.getElementById('coverModalBackdrop').addEventListener('click', function
   if (e.target === this) closeCoverModal();
 });
 
-// Apply saved cover on page load
-applyCoverPhoto();
+// Load cover from DB on page load
+loadCoverFromDB();
 
 // ── Load recipes ────────────────────────────────────────────────
 async function loadRecipes() {
