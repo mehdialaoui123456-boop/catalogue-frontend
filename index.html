@@ -72,6 +72,8 @@
   .recipe-header h1 { color:white; font-weight:900; font-size:clamp(15px,2.8vw,24px); text-shadow:1px 2px 6px rgba(0,0,0,0.25); text-align:center; flex:1; position:relative; z-index:1; }
   .btn-edit-header { background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); padding:4px 10px; border-radius:16px; font-family:'Cairo',sans-serif; font-size:11px; font-weight:700; cursor:pointer; text-decoration:none; flex-shrink:0; position:relative; z-index:1; transition:background 0.2s; white-space:nowrap; }
   .btn-edit-header:hover { background:rgba(255,255,255,0.35); }
+  .btn-delete-header { background:rgba(192,57,43,0.35); color:white; border:1px solid rgba(255,255,255,0.3); padding:4px 10px; border-radius:16px; font-family:'Cairo',sans-serif; font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0; position:relative; z-index:1; transition:background 0.2s; white-space:nowrap; }
+  .btn-delete-header:hover { background:rgba(192,57,43,0.65); }
 
   .recipe-body { display:flex; flex:1; overflow:hidden; }
   .recipe-img { width:40%; flex-shrink:0; overflow:hidden; position:relative; }
@@ -306,7 +308,8 @@ function buildRecipeSlide(recipe) {
 
   // Edit button — only for the recipe owner
   const editBtn = isOwner
-    ? `<a class="btn-edit-header" href="edit-recipe.html?id=${recipe._id}">✏️ تعديل</a>`
+    ? `<a class="btn-edit-header" href="edit-recipe.html?id=${recipe._id}">✏️ تعديل</a>
+       <button class="btn-delete-header" onclick="deleteRecipe('${recipe._id}', this)">🗑️</button>`
     : '';
 
   // Metadata row
@@ -543,6 +546,25 @@ async function clearRecipePhoto() {
 document.getElementById('photoModalBackdrop').addEventListener('click', function(e) {
   if (e.target === this) closePhotoModal();
 });
+
+// ── Delete recipe ─────────────────────────────────────────────
+async function deleteRecipe(recipeId, btnEl) {
+  if (!confirm('هل أنت متأكد من حذف هذه الوصفة؟')) return;
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch(`${API}/recipes/${recipeId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('failed');
+    const slide = btnEl.closest('.spread');
+    const spreads = Array.from(document.querySelectorAll('.spread'));
+    const idx = spreads.indexOf(slide);
+    // Navigate away before removing
+    goTo(idx > 0 ? idx - 1 : 0);
+    setTimeout(() => { slide.remove(); initNav(); }, 460);
+  } catch(e) { alert('تعذّر حذف الوصفة'); }
+}
 
 // ── Load recipes ────────────────────────────────────────────────
 async function loadRecipes() {
