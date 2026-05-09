@@ -284,26 +284,22 @@
       preview.style.display = 'none';
       err.style.display     = 'none';
       clear.style.display   = 'none';
-      coverPhotoUrl = null;
       return;
     }
     preview.onload  = () => {
       preview.style.display = 'block';
       err.style.display     = 'none';
       clear.style.display   = 'inline-block';
-      coverPhotoUrl = url.trim();
     };
     preview.onerror = () => {
       preview.style.display = 'none';
       err.style.display     = 'block';
       clear.style.display   = 'none';
-      coverPhotoUrl = null;
     };
     preview.src = url.trim();
   }
 
   function clearPhoto() {
-    coverPhotoUrl = null;
     document.getElementById('photoUrl').value             = '';
     document.getElementById('photoPreview').src           = '';
     document.getElementById('photoPreview').style.display = 'none';
@@ -410,7 +406,7 @@
       steps,
       youtubeId: youtubeId || undefined,
       notes: notes || undefined,
-      coverPhoto: coverPhotoUrl || undefined,  // debug: logged below
+      coverPhoto: document.getElementById('photoUrl')?.value.trim() || undefined,
     };
 
     btn.disabled = true;
