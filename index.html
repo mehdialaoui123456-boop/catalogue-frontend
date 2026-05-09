@@ -74,10 +74,14 @@
   .btn-edit-header:hover { background:rgba(255,255,255,0.35); }
 
   .recipe-body { display:flex; flex:1; overflow:hidden; }
-  .recipe-img { width:40%; flex-shrink:0; overflow:hidden; }
+  .recipe-img { width:40%; flex-shrink:0; overflow:hidden; position:relative; }
   .recipe-img img { width:100%; height:100%; object-fit:contain; display:block; background:#2a1200; }
   .recipe-img-placeholder { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:white; font-size:clamp(13px,2vw,17px); text-align:center; padding:10px; }
   .recipe-img-placeholder span { font-size:clamp(36px,6vw,56px); }
+  /* Recipe photo edit button */
+  .btn-edit-photo { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.45); color:white; border:1px solid rgba(255,255,255,0.35); padding:4px 10px; border-radius:20px; font-family:'Cairo',sans-serif; font-size:11px; font-weight:700; cursor:pointer; transition:background 0.2s; white-space:nowrap; z-index:10; display:none; }
+  .btn-edit-photo:hover { background:rgba(0,0,0,0.68); }
+  .btn-edit-photo.visible { display:block; }
 
   .recipe-content { flex:1; padding:clamp(10px,1.8vw,18px); overflow-y:auto; display:flex; flex-direction:column; gap:clamp(7px,1.2vw,13px); scrollbar-width:thin; scrollbar-color:var(--orange-light) transparent; }
 
@@ -135,6 +139,21 @@
   .btn-cancel-cover { background:rgba(0,0,0,0.07); color:#555; }
   .btn-cancel-cover:hover { background:rgba(0,0,0,0.13); }
   .btn-clear-cover { background:none; color:#c0392b; border:1px solid rgba(192,57,43,0.3) !important; font-size:12px !important; padding:6px 12px !important; border-radius:20px !important; flex:unset !important; }
+  /* Recipe photo modal — same pattern as cover modal */
+  .photo-modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; display:none; align-items:center; justify-content:center; }
+  .photo-modal-backdrop.open { display:flex; }
+  .photo-modal { background:#fff8f4; border-radius:12px; width:min(90vw,360px); padding:24px; display:flex; flex-direction:column; gap:14px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+  .photo-modal h2 { font-size:16px; font-weight:900; color:#2a1a10; text-align:center; }
+  .photo-modal input { border:1.5px solid rgba(232,68,10,0.3); border-radius:8px; padding:9px 12px; font-family:'Cairo',sans-serif; font-size:13px; color:#2a1a10; outline:none; text-align:right; width:100%; }
+  .photo-modal input:focus { border-color:#e8440a; box-shadow:0 0 0 3px rgba(232,68,10,0.12); }
+  .photo-modal-preview { width:100%; height:120px; object-fit:contain; border-radius:8px; display:none; background:#2a1200; }
+  .photo-modal-actions { display:flex; gap:10px; }
+  .photo-modal-actions button { flex:1; padding:10px; border-radius:24px; font-family:'Cairo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; border:none; transition:all 0.2s; }
+  .btn-save-photo { background:#e8440a; color:white; box-shadow:0 4px 14px rgba(232,68,10,0.35); }
+  .btn-save-photo:hover { background:#b33300; }
+  .btn-cancel-photo { background:rgba(0,0,0,0.07); color:#555; }
+  .btn-cancel-photo:hover { background:rgba(0,0,0,0.13); }
+  .btn-clear-photo { background:none; color:#c0392b; border:1px solid rgba(192,57,43,0.3) !important; font-size:12px !important; padding:6px 12px !important; border-radius:20px !important; flex:unset !important; }
 </style>
 </head>
 <body>
@@ -166,6 +185,22 @@
         <button class="btn-save-cover" onclick="saveCover()">حفظ</button>
         <button class="btn-cancel-cover" onclick="closeCoverModal()">إلغاء</button>
         <button class="btn-clear-cover" onclick="clearCover()">× حذف الصورة</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recipe photo edit modal -->
+  <div class="photo-modal-backdrop" id="photoModalBackdrop">
+    <div class="photo-modal">
+      <h2>تعديل صورة الوصفة</h2>
+      <input type="text" id="photoUrlInput" placeholder="الصق رابط الصورة (i.ibb.co/... أو raw.githubusercontent.com/...)" oninput="previewPhotoInput(this.value)"/>
+      <p style="font-size:11px;color:#aaa;text-align:center;">💡 استخدم Direct link من ibb.co أو رابط raw من GitHub</p>
+      <img id="photoModalPreview" class="photo-modal-preview" alt="معاينة"/>
+      <p id="photoModalErr" style="display:none;font-size:12px;color:#c0392b;text-align:center;">تعذّر تحميل الصورة — تأكد أن الرابط مباشر</p>
+      <div class="photo-modal-actions">
+        <button class="btn-save-photo" onclick="saveRecipePhoto()">حفظ</button>
+        <button class="btn-cancel-photo" onclick="closePhotoModal()">إلغاء</button>
+        <button class="btn-clear-photo" onclick="clearRecipePhoto()">× حذف الصورة</button>
       </div>
     </div>
   </div>
@@ -242,6 +277,11 @@ function buildRecipeSlide(recipe) {
     ? `<img src="${recipe.coverPhoto}" alt="${esc(recipe.name)}" onerror="this.style.display='none'"/>`
     : `<div class="recipe-img-placeholder" style="background:${imgBg}"><span>${emoji}</span><p>${esc(recipe.name)}</p></div>`;
 
+  // Edit-photo button — only for owner
+  const editPhotoBtn = isOwner
+    ? `<button class="btn-edit-photo visible" onclick="openPhotoModal('${recipe._id}', this)">✏️ صورة</button>`
+    : '';
+
   // Ingredients
   const ingsHtml = (recipe.ingredients || [])
     .map(i => `<div class="ing-item">${esc(i)}</div>`).join('');
@@ -286,7 +326,7 @@ function buildRecipeSlide(recipe) {
         ${editBtn}
       </div>
       <div class="recipe-body">
-        <div class="recipe-img">${imgHtml}</div>
+        <div class="recipe-img">${imgHtml}${editPhotoBtn}</div>
         <div class="recipe-content">
           ${metaHtml ? `<div style="font-size:clamp(10px,1.2vw,12px);color:#888;">${metaHtml}</div>` : ''}
           <div><span class="badge">مكونات</span>
@@ -400,6 +440,109 @@ document.getElementById('coverModalBackdrop').addEventListener('click', function
 
 // Load cover from DB on page load
 loadCoverFromDB();
+
+// ── Recipe photo modal ────────────────────────────────────────
+let _photoModalRecipeId  = null;
+let _photoModalImgContainer = null;  // the .recipe-img div
+
+function openPhotoModal(recipeId, btnEl) {
+  _photoModalRecipeId    = recipeId;
+  _photoModalImgContainer = btnEl.closest('.recipe-img');
+  // Grab current src from the <img> inside, if any
+  const existingImg = _photoModalImgContainer.querySelector('img');
+  const currentUrl  = (existingImg && !existingImg.classList.contains('cover-img'))
+    ? existingImg.src : '';
+  document.getElementById('photoUrlInput').value = currentUrl;
+  document.getElementById('photoModalErr').style.display  = 'none';
+  const preview = document.getElementById('photoModalPreview');
+  if (currentUrl) {
+    preview.src = currentUrl;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+    preview.src = '';
+  }
+  document.getElementById('photoModalBackdrop').classList.add('open');
+}
+
+function closePhotoModal() {
+  document.getElementById('photoModalBackdrop').classList.remove('open');
+  _photoModalRecipeId    = null;
+  _photoModalImgContainer = null;
+}
+
+function previewPhotoInput(url) {
+  const preview = document.getElementById('photoModalPreview');
+  const err     = document.getElementById('photoModalErr');
+  if (!url.trim()) {
+    preview.style.display = 'none';
+    err.style.display = 'none';
+    return;
+  }
+  preview.onload  = () => { preview.style.display = 'block'; err.style.display = 'none'; };
+  preview.onerror = () => { preview.style.display = 'none'; err.style.display = 'block'; };
+  preview.src = url.trim();
+}
+
+function _applyRecipePhoto(imgContainer, recipeId, url) {
+  // Remove existing real img (not placeholder)
+  const oldImg = imgContainer.querySelector('img');
+  if (oldImg) oldImg.remove();
+  const oldPlaceholder = imgContainer.querySelector('.recipe-img-placeholder');
+  if (oldPlaceholder) oldPlaceholder.remove();
+
+  if (url) {
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = '';
+    img.onerror = () => img.remove();
+    imgContainer.insertBefore(img, imgContainer.firstChild);
+  } else {
+    // Restore placeholder — find recipe data from DOM (name on header)
+    const slide = imgContainer.closest('.spread');
+    const name  = slide?.querySelector('.recipe-header h1')?.textContent || '';
+    const ph = document.createElement('div');
+    ph.className = 'recipe-img-placeholder';
+    ph.style.background = '#b84a1a';
+    ph.innerHTML = `<span>🍞</span><p>${esc(name)}</p>`;
+    imgContainer.insertBefore(ph, imgContainer.firstChild);
+  }
+}
+
+async function saveRecipePhoto() {
+  if (!_photoModalRecipeId) return;
+  const url   = document.getElementById('photoUrlInput').value.trim();
+  const token = localStorage.getItem('token');
+  try {
+    const res  = await fetch(`${API}/recipes/${_photoModalRecipeId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ coverPhoto: url || null }),
+    });
+    if (!res.ok) throw new Error('failed');
+    _applyRecipePhoto(_photoModalImgContainer, _photoModalRecipeId, url || null);
+  } catch(e) { alert('تعذّر حفظ الصورة'); }
+  closePhotoModal();
+}
+
+async function clearRecipePhoto() {
+  if (!_photoModalRecipeId) return;
+  const token = localStorage.getItem('token');
+  try {
+    await fetch(`${API}/recipes/${_photoModalRecipeId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ coverPhoto: null }),
+    });
+    _applyRecipePhoto(_photoModalImgContainer, _photoModalRecipeId, null);
+  } catch(e) { alert('تعذّر حذف الصورة'); }
+  closePhotoModal();
+}
+
+// Close modal on backdrop click
+document.getElementById('photoModalBackdrop').addEventListener('click', function(e) {
+  if (e.target === this) closePhotoModal();
+});
 
 // ── Load recipes ────────────────────────────────────────────────
 async function loadRecipes() {
