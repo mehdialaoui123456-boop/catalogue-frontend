@@ -265,7 +265,7 @@ function esc(str) {
 // ── Build recipe slide ────────────────────────────────────────
 function buildRecipeSlide(recipe) {
   const ownerId = String(recipe.createdBy?._id || recipe.createdBy || '');
-  const isOwner = loggedIn && myId && String(myId) === ownerId;
+  const isOwner = loggedIn;
 
   // Image
   const imgBg  = recipe.category === 'بريوش' ? '#c4872a'
