@@ -1,5 +1,4 @@
-const API = 'https://catalogue-backend-sphr.vercel.app';
-
+const API = 'https://catalogue-backend-sphr.vercel.app/api';
 // ── Recipes ───────────────────────────────────────────────────
 
 // Get all recipes (no auth needed)
